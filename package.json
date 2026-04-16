@@ -1,0 +1,22 @@
+{
+  "name": "mini-lan-chatapp",
+  "version": "1.0.0",
+  "description": "A simple LAN-only browser chat app powered by Express and Socket.IO.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "lan",
+    "chat",
+    "websocket",
+    "socket.io"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  }
+}
