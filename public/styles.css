@@ -114,12 +114,14 @@ h2 {
   font-size: 1.35rem;
 }
 
-.name-form {
+.name-form,
+.server-form {
   display: grid;
   gap: 8px;
 }
 
-.name-form label {
+.name-form label,
+.server-form label {
   color: var(--muted);
   font-size: 0.9rem;
   font-weight: 700;
@@ -210,6 +212,7 @@ h2 {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) 24px auto;
   min-width: 0;
+  min-height: 0;
   background: rgba(255, 255, 255, 0.92);
 }
 

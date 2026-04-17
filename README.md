@@ -22,11 +22,15 @@ Open this on the host machine:
 http://localhost:3000
 ```
 
-Other devices on the same LAN should open the address printed by the server, for example:
+Other devices on the same LAN can open the host machine's LAN address printed by the server, for example:
 
 ```text
 http://192.168.1.5:3000
 ```
+
+If another device opens `http://localhost:3000`, it will try to connect to itself instead of the host. Other people must use the host's IP address above.
+
+On the client page there is also a LAN host address box where you can enter the host server URL manually.
 
 ## If Other Devices Cannot Connect
 

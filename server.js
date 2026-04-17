@@ -11,7 +11,13 @@ const MAX_HISTORY = 100;
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: true,
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
 
 const users = new Map();
 const messages = [];

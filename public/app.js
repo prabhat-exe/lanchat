@@ -1,5 +1,5 @@
-const socket = io();
-
+const serverForm = document.querySelector("#serverForm");
+const serverInput = document.querySelector("#serverInput");
 const nameForm = document.querySelector("#nameForm");
 const nameInput = document.querySelector("#nameInput");
 const messageForm = document.querySelector("#messageForm");
@@ -10,56 +10,100 @@ const onlineCount = document.querySelector("#onlineCount");
 const connectionStatus = document.querySelector("#connectionStatus");
 const typingStatus = document.querySelector("#typingStatus");
 
+let socket = null;
+
 const storageKey = "lan-chat-name";
 const typingUsers = new Map();
 let typingTimer = null;
 
 nameInput.value = localStorage.getItem(storageKey) || "";
+messageInput.disabled = true;
 
-socket.on("connect", () => {
-  setConnection("Connected", true);
+serverInput.value = window.location.protocol.startsWith("http") ? window.location.origin : "";
+setConnection(serverInput.value ? `Connecting to ${serverInput.value}` : "Enter host URL to connect", false);
 
-  if (nameInput.value.trim()) {
-    socket.emit("user:setName", nameInput.value);
-  }
+serverForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const url = serverInput.value.trim();
+  if (!url) return;
+  connectToServer(url);
 });
 
-socket.on("disconnect", () => {
-  setConnection("Reconnecting", false);
-});
+if (serverInput.value) {
+  connectToServer(serverInput.value);
+}
 
-socket.on("chat:history", (messages) => {
-  messagesEl.replaceChildren();
-  messages.forEach(addMessage);
-  scrollMessages();
-});
+function connectToServer(serverUrl) {
+  if (!serverUrl) return;
 
-socket.on("chat:message", (message) => {
-  addMessage(message);
-  scrollMessages();
-});
-
-socket.on("users:list", (users) => {
-  onlineCount.textContent = users.length;
-  userList.replaceChildren(...users.map(renderUser));
-});
-
-socket.on("chat:typing", ({ userId, name, isTyping }) => {
-  if (isTyping) {
-    typingUsers.set(userId, name);
-  } else {
-    typingUsers.delete(userId);
+  if (socket) {
+    socket.off();
+    socket.disconnect();
   }
 
-  renderTyping();
-});
+  socket = io(serverUrl, { autoConnect: false });
+  attachSocketEvents(socket);
+
+  setConnection(`Connecting to ${serverUrl}`, false);
+  messageInput.disabled = true;
+  socket.open();
+}
+
+function attachSocketEvents(socketInstance) {
+  socketInstance.on("connect", () => {
+    setConnection("Connected", true);
+    messageInput.disabled = false;
+
+    if (nameInput.value.trim()) {
+      socketInstance.emit("user:setName", nameInput.value);
+    }
+  });
+
+  socketInstance.on("disconnect", () => {
+    setConnection("Disconnected", false);
+    messageInput.disabled = true;
+  });
+
+  socketInstance.on("connect_error", () => {
+    setConnection("Connection failed", false);
+    messageInput.disabled = true;
+  });
+
+  socketInstance.on("chat:history", (messages) => {
+    messagesEl.replaceChildren();
+    messages.forEach(addMessage);
+    scrollMessages();
+  });
+
+  socketInstance.on("chat:message", (message) => {
+    addMessage(message);
+    scrollMessages();
+  });
+
+  socketInstance.on("users:list", (users) => {
+    onlineCount.textContent = users.length;
+    userList.replaceChildren(...users.map(renderUser));
+  });
+
+  socketInstance.on("chat:typing", ({ userId, name, isTyping }) => {
+    if (isTyping) {
+      typingUsers.set(userId, name);
+    } else {
+      typingUsers.delete(userId);
+    }
+
+    renderTyping();
+  });
+}
 
 nameForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const name = nameInput.value.trim();
 
   localStorage.setItem(storageKey, name);
-  socket.emit("user:setName", name);
+  if (socket && socket.connected) {
+    socket.emit("user:setName", name);
+  }
   messageInput.focus();
 });
 
@@ -70,11 +114,16 @@ messageForm.addEventListener("submit", (event) => {
 
 messageInput.addEventListener("input", () => {
   autoSizeMessageInput();
-  socket.emit("chat:typing", messageInput.value.trim().length > 0);
+
+  if (socket && socket.connected) {
+    socket.emit("chat:typing", messageInput.value.trim().length > 0);
+  }
 
   clearTimeout(typingTimer);
   typingTimer = setTimeout(() => {
-    socket.emit("chat:typing", false);
+    if (socket && socket.connected) {
+      socket.emit("chat:typing", false);
+    }
   }, 900);
 });
 
@@ -88,7 +137,7 @@ messageInput.addEventListener("keydown", (event) => {
 function sendMessage() {
   const text = messageInput.value.trim();
 
-  if (!text) return;
+  if (!text || !socket || !socket.connected) return;
 
   socket.emit("chat:message", text);
   socket.emit("chat:typing", false);
