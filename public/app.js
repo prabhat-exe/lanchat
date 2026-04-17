@@ -9,14 +9,21 @@ const userList = document.querySelector("#userList");
 const onlineCount = document.querySelector("#onlineCount");
 const connectionStatus = document.querySelector("#connectionStatus");
 const typingStatus = document.querySelector("#typingStatus");
+const settingsBtn = document.querySelector("#settingsBtn");
+const settingsDropdown = document.querySelector("#settingsDropdown");
+const themeSelect = document.querySelector("#themeSelect");
 
 let socket = null;
 
 const storageKey = "lan-chat-name";
+const themeKey = "lan-chat-theme";
 const typingUsers = new Map();
 let typingTimer = null;
 
 nameInput.value = localStorage.getItem(storageKey) || "";
+const savedTheme = localStorage.getItem(themeKey) || "light";
+document.documentElement.setAttribute("data-theme", savedTheme);
+themeSelect.value = savedTheme;
 messageInput.disabled = true;
 
 serverInput.value = window.location.protocol.startsWith("http") ? window.location.origin : "";
@@ -132,6 +139,16 @@ messageInput.addEventListener("keydown", (event) => {
     event.preventDefault();
     sendMessage();
   }
+});
+
+settingsBtn.addEventListener("click", () => {
+  settingsDropdown.classList.toggle("hidden");
+});
+
+themeSelect.addEventListener("change", (event) => {
+  const theme = event.target.value;
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem(themeKey, theme);
 });
 
 function sendMessage() {
